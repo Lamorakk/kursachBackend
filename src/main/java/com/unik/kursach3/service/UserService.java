@@ -3,6 +3,7 @@ package com.unik.kursach3.service;
 import com.unik.kursach3.entity.User;
 import com.unik.kursach3.repository.UserRepository;
 
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
@@ -79,4 +80,57 @@ public class UserService {
         // Send `resetToken` to user's email (implementation omitted)
         System.out.println("Password reset token: " + resetToken);
     }
+    public String getUserEmailFromToken(String token) {
+        if (token == null || token.isEmpty()) {
+            throw new IllegalArgumentException("Token cannot be null or empty");
+        }
+
+        try {
+            Claims claims = Jwts.parserBuilder()
+                    .setSigningKey(getSigningKey()) // Use the signing key
+                    .build()
+                    .parseClaimsJws(token.replace("Bearer ", ""))
+                    .getBody();
+
+            String email = claims.getSubject();
+            if (email == null || email.isEmpty()) {
+                throw new IllegalArgumentException("Token does not contain a valid email");
+            }
+            return email;
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Invalid token", e);
+        }
+    }
+
+
+    public void sendVerificationEmail(User user) {
+        String verificationToken = UUID.randomUUID().toString();
+        user.setVerificationToken(verificationToken);
+        userRepository.save(user);
+
+        // Logic to send email (use an email service like SendGrid or SMTP)
+        System.out.println("Verification email sent with token: " + verificationToken);
+    }
+
+    public void verifyEmail(String token) {
+        User user = userRepository.findByVerificationToken(token)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid token"));
+        user.setVerified(true);
+        user.setVerificationToken(null); // Clear the token
+        userRepository.save(user);
+    }
+    public void completePasswordReset(String resetToken, String newPassword) {
+        User user = userRepository.findByResetToken(resetToken)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid reset token"));
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        user.setResetToken(null); // Clear the token
+        userRepository.save(user);
+    }
+    public User findUserByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found for email: " + email));
+    }
+
+
+
 }

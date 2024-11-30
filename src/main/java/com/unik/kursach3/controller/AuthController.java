@@ -36,11 +36,12 @@ public class AuthController {
             String password = payload.get("password");
             User user = userService.loginUser(email, password);
             String token = userService.generateJwtToken(user);
-            return ResponseEntity.ok(Map.of("token", token));
+            return ResponseEntity.ok(Map.of("token", token, "user", user));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
         }
     }
+
 
     @PostMapping("/reset-password")
     public ResponseEntity<?> resetPassword(@RequestBody Map<String, String> payload) {
@@ -52,6 +53,31 @@ public class AuthController {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
+
+    @PostMapping("/verify-email")
+    public ResponseEntity<?> verifyEmail(@RequestBody Map<String, String> payload) {
+        try {
+            String token = payload.get("token");
+            userService.verifyEmail(token);
+            return ResponseEntity.ok(Map.of("message", "Email verified successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+    @PostMapping("/reset-password/complete")
+    public ResponseEntity<?> completeResetPassword(@RequestBody Map<String, String> payload) {
+        try {
+            String resetToken = payload.get("token");
+            String newPassword = payload.get("newPassword");
+            userService.completePasswordReset(resetToken, newPassword);
+            return ResponseEntity.ok(Map.of("message", "Password reset successful"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+
+
     class ApiResponse {
         private String message;
 

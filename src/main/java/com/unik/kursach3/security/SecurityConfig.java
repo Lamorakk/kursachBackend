@@ -1,26 +1,33 @@
-package com.unik.kursach3.security;
+    package com.unik.kursach3.security;
 
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.web.SecurityFilterChain;
+    import org.springframework.context.annotation.Bean;
+    import org.springframework.context.annotation.Configuration;
+    import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+    import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+    import org.springframework.security.web.SecurityFilterChain;
+    import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-@Configuration
-public class SecurityConfig {
+    @Configuration
+    public class SecurityConfig {
 
-    @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-                .csrf(csrf -> csrf.disable())
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/register").permitAll()
-                        .requestMatchers("/api/login").permitAll()// Allow public access
-                        .anyRequest().authenticated() // All other endpoints require authentication
-                )
-                .formLogin(formLogin -> formLogin.defaultSuccessUrl("/dashboard", true))
-                .logout(logout -> logout.logoutSuccessUrl("/login"));
+        private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
-        return http.build();
+        public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+            this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        }
+
+        @Bean
+        public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+            http
+                    .csrf(AbstractHttpConfigurer::disable)
+                    .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                    .authorizeHttpRequests(auth -> auth
+                            .requestMatchers("/api/register", "/api/login", "/api/reset-password/**", "/api/verify-email").permitAll()
+                            .anyRequest().authenticated()
+                    );
+
+            return http.build();
+        }
     }
-}
+
 

@@ -35,6 +35,11 @@ public class User {
     @Column(name = "created_at", updatable = false, insertable = false)
     private java.sql.Timestamp createdAt;
 
+    @Column(nullable = true)
+    private String verificationToken;
+
+    @Column(nullable = true)
+    private String resetToken;
     // Additional fields
     @Column
     private String name; // User's full name
